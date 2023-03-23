@@ -1,10 +1,12 @@
 from datetime import date
 import os
 import praw
+import pytube
 from dotenv import load_dotenv
 import requests
 import json
 from utils.Scalegif import scale_gif
+import utils.Scalegif
 
 load_dotenv()
 
@@ -31,7 +33,7 @@ class RedditBot():
             with open(self.posted_already_path, "r") as file:
                 self.already_posted = json.load(file)
 
-    def get_posts(self, sub="memes"):
+    def get_posts(self, sub="memes", type="all"):
         self.post_data = []
         subreddit = self.reddit.subreddit(sub)
         posts = []
@@ -39,8 +41,16 @@ class RedditBot():
             if submission.stickied:
                 print("Mod Post")
             else:
-                posts.append(submission)
-
+                
+                url = submission.url.lower()
+                # print(url)
+                # print(type)
+                if type == "video":
+                    if "/v.redd" in url: posts.append(submission)
+                elif type=="image":
+                    if "/i.redd" in url: posts.append(submission)
+                elif type=="all":
+                    posts.append(submission)
         return posts
 
     def create_data_folder(self):
@@ -53,24 +63,28 @@ class RedditBot():
             os.makedirs(data_folder_path)
 
     def save_image(self, submission, scale=(720, 1280)):
-        if "jpg" in submission.url.lower() or "png" in submission.url.lower() or "gif" in submission.url.lower() and "gifv" not in submission.url.lower():
+        #print(submission.url.lower())
+        if (True): #"jpg" in submission.url.lower() or "png" in submission.url.lower() or "gif" in submission.url.lower() and "gifv" not in submission.url.lower():
             # try:
 
             # Get all images to ignore
             dt_string = date.today().strftime("%m%d%Y")
             data_folder_path = os.path.join(self.data_path, f"{dt_string}/")
             CHECK_FOLDER = os.path.isdir(data_folder_path)
-            if CHECK_FOLDER and len(self.post_data) < 5 and not submission.over_18 and submission.id not in self.already_posted:
-                image_path = f"{data_folder_path}Post-{submission.id}{submission.url.lower()[-4:]}"
+            
+            if CHECK_FOLDER and len(self.post_data) < 1 and not submission.over_18 and submission.id not in self.already_posted:
+                image_path = f"{data_folder_path}Post-{submission.id}{submission.url.lower()[-4:]}.mp4"
 
                 # Get the image and write the path
-                reqest = requests.get(submission.url.lower())
+                video_url = submission.media['reddit_video']['fallback_url']
+                request = requests.get(video_url)
                 with open(image_path, 'wb') as f:
-                    f.write(reqest.content)
+                    f.write(request.content)
 
                 # Could do transforms on images like resize!
                 #image = cv2.resize(image,(720,1280))
-                scale_gif(image_path, scale)
+                # Scalegif.scale_vid(image_path, scale)
+                
 
                 #cv2.imwrite(f"{image_path}", image)
                 submission.comment_sort = 'best'
@@ -117,7 +131,6 @@ class RedditBot():
                     "Best_comment": best_comment.body,
                     "best_reply": best_reply
                 }
-
                 self.post_data.append(data_file)
                 self.already_posted.append(submission.id)
                 with open(f"{data_folder_path}{submission.id}.json", "w") as outfile:

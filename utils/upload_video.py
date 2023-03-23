@@ -3,149 +3,135 @@ import os
 import random
 import sys
 import time
+import utils.YT_api
+from utils.CreateMovie import CreateMovie
 
-from apiclient.discovery import build
-from apiclient.errors import HttpError
-from apiclient.http import MediaFileUpload
-from oauth2client.client import flow_from_clientsecrets
-from oauth2client.file import Storage
-from oauth2client.tools import argparser, run_flow
-
-
-# Explicitly tell the underlying HTTP transport library not to retry, since
-# we are handling retry logic ourselves.
-httplib2.RETRIES = 1
-
-# Maximum number of times to retry before giving up.
-MAX_RETRIES = 10
-
-# Always retry when these exceptions are raised.
-RETRIABLE_EXCEPTIONS = (httplib2.HttpLib2Error, IOError)
-
-# Always retry when an apiclient.errors.HttpError with one of these status
-# codes is raised.
-RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
-CLIENT_SECRETS_FILE = "client_secrets.json"
-
-# This OAuth 2.0 access scope allows an application to upload files to the
-# authenticated user's YouTube channel, but doesn't allow other types of access.
-YOUTUBE_UPLOAD_SCOPE = "https://www.googleapis.com/auth/youtube.upload"
-YOUTUBE_API_SERVICE_NAME = "youtube"
-YOUTUBE_API_VERSION = "v3"
-
-# This variable defines a message to display if the CLIENT_SECRETS_FILE is
-# missing.
-MISSING_CLIENT_SECRETS_MESSAGE = """
-WARNING: Please configure OAuth 2.0
-
-To make this sample run you will need to populate the client_secrets.json file
-found at:
-
-   %s
-
-with information from the API Console
-https://console.developers.google.com/
-
-For more information about the client_secrets.json file format, please visit:
-https://developers.google.com/api-client-library/python/guide/aaa_client_secrets
-""" % os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                   CLIENT_SECRETS_FILE))
-
-VALID_PRIVACY_STATUSES = ("public", "private", "unlisted")
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
-def get_authenticated_service(args):
-  flow = flow_from_clientsecrets(CLIENT_SECRETS_FILE,
-    scope=YOUTUBE_UPLOAD_SCOPE,
-    message=MISSING_CLIENT_SECRETS_MESSAGE)
+from utils.YT_api import add_comment
+from utils.YT_api import get_last_video_id
+from utils.cleanStrings import clean
 
-  storage = Storage("%s-oauth2.json" % sys.argv[0])
-  credentials = storage.get()
 
-  if credentials is None or credentials.invalid:
-    credentials = run_flow(flow, storage, args)
 
-  return build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
-    http=credentials.authorize(httplib2.Http()))
+def upload_vid_chrome(video_data, channel_name):
+  
+  timeout = 10
+  options = webdriver.ChromeOptions()
+  # options.add_experimental_option('excludeSwitches', ['enable-logging'])
+  options.add_argument("--log-level=3")
+  options.add_argument("user-data-dir=C:\\Users\\User\\AppData\\Local\Google\\Chrome\\User Data\\")
+  options.binary_location = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
 
-def initialize_upload(youtube, options):
-  tags = None
-#   if options.keywords:
-#     tags = options.keywords.split(",")
+  bot = webdriver.Chrome(executable_path="chromedriver.exe", chrome_options=options)
+  
+  url = "https://studio.youtube.com/"
+  bot.get(url)
 
-  body=dict(
-    snippet=dict(
-      title=options['title'],
-      description=options['description'],
-      tags=tags,
-      #categoryId=options['category']
-    ),
-    status=dict(
-      privacyStatus=options['privacyStatus']
-    )
-  )
 
-  # Call the API's videos.insert method to create and upload the video.
-  insert_request = youtube.videos().insert(
-    part=",".join(body.keys()),
-    body=body,
-    media_body=MediaFileUpload(options['file'], chunksize=-1, resumable=True)
-  )
+  acct_btn = WebDriverWait(bot, timeout).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="account-button"]')))
+  acct_btn.click()
+  time.sleep(3)
 
-  resumable_upload(insert_request)
+  #channels_btn = bot.find_element(By.XPATH,"//*[contains(text(),'Switch account')]"))
+  channels_btn = WebDriverWait(bot, timeout).until(EC.visibility_of_element_located((By.XPATH,'//*[contains(text(),"Switch account")]')))
+  print("switch account button clicked")
+  channels_btn.click()
+  time.sleep(3)
 
-# This method implements an exponential backoff strategy to resume a
-# failed upload.
-def resumable_upload(insert_request):
-  response = None
-  error = None
-  retry = 0
-  while response is None:
-    try:
-      print("Uploading file...")
-      status, response = insert_request.next_chunk()
-      if response is not None:
-        if 'id' in response:
-          print("Video id '%s' was successfully uploaded." % response['id'])
-        else:
-          exit("The upload failed with an unexpected response: %s" % response)
-    except HttpError as e:
-      if e.resp.status in RETRIABLE_STATUS_CODES:
-        error = "A retriable HTTP error %d occurred:\n%s" % (e.resp.status,
-                                                             e.content)
-      else:
-        raise
-    except RETRIABLE_EXCEPTIONS as e:
-      error = "A retriable error occurred: %s" % e
+  search = f'//*[contains(text(),"{channel_name}")]'
+  channel_btn = WebDriverWait(bot, timeout).until(EC.visibility_of_element_located((By.XPATH, search)))
+  print(f"{channel_name} button clicked")
+  channel_btn.click()
+  time.sleep(3)
 
-    if error is not None:
-      print(error)
-      retry += 1
-      if retry > MAX_RETRIES:
-        exit("No longer attempting to retry.")
+  # continueSub = input("continue? y/n")
+  # if continueSub.lower() != "y":
+    #  exit
 
-      max_sleep = 2 ** retry
-      sleep_seconds = random.random() * max_sleep
-      print("Sleeping %f seconds and then retrying..." % sleep_seconds)
-      time.sleep(sleep_seconds)
+  upload_button = WebDriverWait(bot, timeout).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="upload-icon"]')))
+  upload_button.click()
 
-def upload_video(video_data):
-  args = argparser.parse_args()
-  if not os.path.exists(video_data['file']):
-    exit("Please specify a valid file using the --file= parameter.")
+  time.sleep(3)
+  file_input = bot.find_element(By.XPATH, '//*[@id="content"]/input')
+  # file_input = WebDriverWait(bot, timeout).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="content"]/input')))
+  simp_path = 'video.mp4'
+  abs_path = os.path.abspath(simp_path)
+  file_input.send_keys(abs_path)
+  next_button = WebDriverWait(bot,timeout).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="next-button"]')))
 
-  youtube = get_authenticated_service(args)
   try:
-    initialize_upload(youtube, video_data)
-  except HttpError as e:
-    print("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
+    title_textbox = WebDriverWait(bot,timeout).until(EC.visibility_of_element_located((By.XPATH, '//*[contains(@aria-label,"Add a title")]')))
+    title_textbox.clear()
+    title_textbox.send_keys(video_data['title'])
+  except:
+     print("Error setting video title")
 
-if __name__ == '__main__':
+  # desc_textbox = WebDriverWait(bot,timeout).until(EC.visibility_of_element_located((By.XPATH, '//*[@aria-label="Tell viewers about your video"]')))
+  # desc_textbox.clear()
+  # desc_textbox.send_keys(video_data['description'])
+
+  for i in range(3):
+      next_button.click()
+      time.sleep(1)
+
+  print("clicking radio button")
+  public_btn = WebDriverWait(bot,timeout).until(EC.visibility_of_element_located((By.XPATH, '//*[@name="PUBLIC"]')))
+  public_btn.click()
+
+  done_button = bot.find_element(By.XPATH, '//*[@id="done-button"]')
+  done_button.click()
+  time.sleep(10)
+
+  bot.quit()
+
+def postVideo(post, redditbot,test=False):
+    subreddit = post['subreddit']
+    channel_name = post['channel_name']
+    channel_id = post['channel_id']
+    comment = post['comment']
+
+    # Gets our new posts pass if image related subs. Default is memes
+
+    posts = redditbot.get_posts(subreddit,"video")
+
+    # Create folder if it doesn't exist
+    redditbot.create_data_folder()
+
+    # Go through posts and find 1 that will work for us.
+    for post in posts:
+        txt=""
+        redditbot.save_image(post)
+
+    # Create the movie itself!
+    CreateMovie.CreateMP4(redditbot.post_data)
+    vid_title = f"\"{redditbot.post_data[0]['title']}\""
+    vid_title = clean(vid_title)
     video_data = {
-        "file": "video.mp4",
-        "title": "Best of memes!",
-        "description": "#shorts \n Giving you the hottest memes of the day with funny comments!",
-        "keywords":"meme,reddit",
-        "privacyStatus":"private"
+            "file": "video.mp4",
+            "title": vid_title,
+            "description": "",
+            "keywords":"",
+            "privacyStatus":"public"
     }
-    update_video(video_data)
+
+    if not test:
+      print(video_data["title"])
+      
+      print("Posting Video...")
+      upload_vid_chrome(video_data, channel_name)
+
+      
+
+      if comment != "":
+          print("Waiting 1 minute before adding comment")
+          time.sleep(60)
+          print("Getting last video id")
+          id = get_last_video_id(channel_id)
+          if id != "":
+              print("adding comment")
+              add_comment(id,channel_id,comment)
