@@ -1,4 +1,9 @@
 from PIL import Image
+import moviepy as mp
+from moviepy.video.io.VideoFileClip import VideoFileClip
+from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
+from moviepy.video.fx.all import crop
+from moviepy.video.fx.all import resize
 
 def scale_gif(path, scale, new_path=None):
     gif = Image.open(path)
@@ -17,6 +22,24 @@ def scale_gif(path, scale, new_path=None):
     else:
         gif = gif.resize(scale)
         gif.save(path)
+
+def scale_vid(vid:VideoFileClip, new_path=None):
+    
+    vid.resize(width=1080)
+    vid = vid.set_duration = 60
+    bg = mp.video.VideoClip.ImageClip("img\\black_bg_1080x1920.png")
+    newVid = CompositeVideoClip([bg,vid.set_position("center")])
+    newVid = newVid.set_duration(vid.duration)
+    # newVid.write_videofile(path)
+    return newVid
+
+def crop_vid(path, scale, new_path=None):
+    vid = VideoFileClip(path)
+    w=scale[0]
+    h=scale[1]
+    vid = vid.fx(crop,vid.w/2,vid.h/2,w,h)
+    vid.write_videofile(path,threads=4,codec='libx264')
+
 
 
 def get_new_frames(gif, scale):

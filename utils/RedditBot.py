@@ -1,10 +1,14 @@
 from datetime import date
 import os
 import praw
+import prawcore
+import subprocess
+import pytube
 from dotenv import load_dotenv
 import requests
 import json
 from utils.Scalegif import scale_gif
+import utils.Scalegif
 
 load_dotenv()
 
@@ -31,17 +35,37 @@ class RedditBot():
             with open(self.posted_already_path, "r") as file:
                 self.already_posted = json.load(file)
 
-    def get_posts(self, sub="memes"):
+
+
+    def get_posts(self, sub="memes", type="all"):
         self.post_data = []
         subreddit = self.reddit.subreddit(sub)
         posts = []
-        for submission in subreddit.top("day", limit=100):
+        for submission in subreddit.top(time_filter="week", limit=100):
             if submission.stickied:
                 print("Mod Post")
             else:
-                posts.append(submission)
-
+                
+                url = submission.url.lower()
+                # print(url)
+                # print(type)
+                if type == "video":
+                    if "/v.redd" in url: posts.append(submission)
+                elif type=="image":
+                    if "/i.redd" in url: posts.append(submission)
+                elif type=="all":
+                    posts.append(submission)
         return posts
+
+    def get_video(self, subreddit="memes", qty=1):
+        posts = self.get_posts(subreddit,"video")
+        self.create_data_folder()
+        dataList = []
+        for post in posts:
+            vid = self.save_image(post,qty)
+            if vid != None:
+                dataList.append(vid)
+        return dataList
 
     def create_data_folder(self):
         today = date.today()
@@ -52,25 +76,70 @@ class RedditBot():
         if not check_folder:
             os.makedirs(data_folder_path)
 
-    def save_image(self, submission, scale=(720, 1280)):
-        if "jpg" in submission.url.lower() or "png" in submission.url.lower() or "gif" in submission.url.lower() and "gifv" not in submission.url.lower():
-            # try:
+    def get_vid(fileName,video_url):
+        video_file = fileName+"-video.mp4"
+        audio_file = fileName+"-audio.mp4"
+        out_file = fileName+".mp4"
 
+        audio_url = video_url[:video_url.rfind('/')] + '/DASH_audio.mp4?source=fallback'
+
+        # Download the video and audio streams using Prawcore
+        #request = requests.get(video_url)
+        response = requests.get(video_url)
+        with open(video_file, 'wb') as f:
+                f.write(response.content)
+                
+        response = requests.get(audio_url,)
+        
+        if response.status_code != 403:
+            with open(audio_file, 'wb') as f:
+                f.write(response.content)
+
+            # Use ffmpeg to combine the video and audio streams into a single file
+            with open('NUL', 'w') as devnull:
+                return_code = subprocess.call(['ffmpeg','-y', '-i', video_file, '-i', audio_file, '-c:v', 'copy','-c:a', 'aac', '-b:a', '256k', out_file], stdout=devnull, stderr=devnull)
+                
+            if return_code != 0:
+                print(f"ffmpeg failed with error code {return_code}")
+                if os.path.exists(out_file):
+                    os.remove(out_file)
+                os.rename(video_file,out_file)
+        
+        if os.path.exists(out_file) == False:os.rename(video_file,out_file)
+        if os.path.exists(video_file):os.remove(video_file)
+        if os.path.exists(audio_file):os.remove(audio_file)
+
+        return out_file
+
+
+    def save_image(self, submission, scale=(720, 1280),qty=1):
+        #print(submission.url.lower())
+
+        if (submission.media != None): #"jpg" in submission.url.lower() or "png" in submission.url.lower() or "gif" in submission.url.lower() and "gifv" not in submission.url.lower():
+            # try:
+            video = submission.media['reddit_video']
             # Get all images to ignore
             dt_string = date.today().strftime("%m%d%Y")
             data_folder_path = os.path.join(self.data_path, f"{dt_string}/")
             CHECK_FOLDER = os.path.isdir(data_folder_path)
-            if CHECK_FOLDER and len(self.post_data) < 5 and not submission.over_18 and submission.id not in self.already_posted:
-                image_path = f"{data_folder_path}Post-{submission.id}{submission.url.lower()[-4:]}"
+            
+            if CHECK_FOLDER and len(self.post_data) < qty and video['height'] > 500 and not submission.over_18 and submission.id not in self.already_posted:
+                fileName = f"{data_folder_path}Post-{submission.id}{submission.url.lower()[-4:]}"
+                
 
-                # Get the image and write the path
-                reqest = requests.get(submission.url.lower())
-                with open(image_path, 'wb') as f:
-                    f.write(reqest.content)
+                
+                # # Get the image and write the path
+                video_url = video['fallback_url']
+
+                video_path = RedditBot.get_vid(fileName,video_url)
+                # request = requests.get(video_url)
+                # with open(image_path, 'wb') as f:
+                #     f.write(request.content)
 
                 # Could do transforms on images like resize!
                 #image = cv2.resize(image,(720,1280))
-                scale_gif(image_path, scale)
+                # Scalegif.scale_vid(image_path, scale)
+                
 
                 #cv2.imwrite(f"{image_path}", image)
                 submission.comment_sort = 'best'
@@ -109,7 +178,7 @@ class RedditBot():
                         best_reply = best_comment_2.body
 
                 data_file = {
-                    "image_path": image_path,
+                    "image_path": video_path,
                     'id': submission.id,
                     "title": submission.title,
                     "score": submission.score,
@@ -117,12 +186,13 @@ class RedditBot():
                     "Best_comment": best_comment.body,
                     "best_reply": best_reply
                 }
-
                 self.post_data.append(data_file)
-                self.already_posted.append(submission.id)
                 with open(f"{data_folder_path}{submission.id}.json", "w") as outfile:
                     json.dump(data_file, outfile)
                 with open(self.posted_already_path, "w") as outfile:
                     json.dump(self.already_posted, outfile)
+                return data_file
             else:
                 return None
+        else:
+            return None
