@@ -4,6 +4,8 @@
 __pycache__
 client_secrets.json
 email_secrets.json
-*.json
+main.py-oauth2.json
+./*/*.json
 *.mp4
 video.mp4
+video.json
