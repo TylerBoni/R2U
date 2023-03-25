@@ -1,6 +1,11 @@
 import unicodedata
 import re
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 0d6aa02d036ce42cc5968277be2a4f3408b56015
 def clean(text):
     # Replace non-BMP characters with a replacement character
     
@@ -18,3 +23,8 @@ def clean(text):
 
     return text
 
+<<<<<<< HEAD
+=======
+text = clean("This dog 😂")
+print(text)
+>>>>>>> 0d6aa02d036ce42cc5968277be2a4f3408b56015

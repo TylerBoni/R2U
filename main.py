@@ -8,10 +8,14 @@ Quick notes!
     * scale=(width,height)
 """
 import time
+
 import pytz
 import random
 import json
 import utils.selenium
+
+import random
+
 
 import utils.emailClient as email
 from utils.emailClient import sendEmail
@@ -19,6 +23,7 @@ from datetime import datetime
 from utils.CreateMovie import CreateMovie, GetDaySuffix
 from utils.RedditBot import RedditBot
 from utils.upload_video import postVideo
+
 from utils.helpers import getJsonFromFile
 from utils.YT_api import get_last_video_id,add_comment
 #from utils.selenium import addComment
@@ -29,10 +34,12 @@ hr = min*60
 day = hr*24
 timezone = pytz.timezone("US/Pacific")
 
+
 #Create Reddit Data Bot
 redditbot = RedditBot()
 
 secrets = email.getSecrets()
+
 
 ##########################################
 print("Set delay in seconds to start running:")
@@ -95,5 +102,7 @@ while run:
         if test == False:
             sendEmail(secrets['email']['sender_email'],"Videos Posted",msg + "/n/n" + str(post_data))
         
+
+
     print(msg)
     time.sleep(timeToWait)

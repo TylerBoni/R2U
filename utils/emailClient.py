@@ -1,11 +1,21 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+<<<<<<< HEAD
 from utils.helpers import getJsonFromFile
 import json
 
 def getSecrets():
     return getJsonFromFile('email_secrets.json')
+=======
+import json
+
+def getSecrets():
+    # read the contents of the JSON file
+    with open('email_secrets.json', 'r') as f:
+        secrets = json.load(f)
+    return secrets
+>>>>>>> 0d6aa02d036ce42cc5968277be2a4f3408b56015
 
 def sendEmail(to,subject,msg):
     secrets = getSecrets()
