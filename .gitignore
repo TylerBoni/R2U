@@ -3,10 +3,7 @@
 /data
 __pycache__
 client_secrets.json
-<<<<<<< HEAD
-=======
 email_secrets.json
->>>>>>> 0d6aa02d036ce42cc5968277be2a4f3408b56015
 *.json
 *.mp4
 video.mp4
