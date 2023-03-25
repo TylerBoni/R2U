@@ -7,51 +7,93 @@ Quick notes!
     * Do this by adding a parameter of scale to the image_save function.
     * scale=(width,height)
 """
-
-from datetime import date
 import time
+import pytz
+import random
+import json
+import utils.selenium
+
+import utils.emailClient as email
+from utils.emailClient import sendEmail
+from datetime import datetime
 from utils.CreateMovie import CreateMovie, GetDaySuffix
 from utils.RedditBot import RedditBot
-from utils.upload_video import upload_video
+from utils.upload_video import postVideo
+from utils.helpers import getJsonFromFile
+from utils.YT_api import get_last_video_id,add_comment
+#from utils.selenium import addComment
+
+
+min = 60
+hr = min*60
+day = hr*24
+timezone = pytz.timezone("US/Pacific")
 
 #Create Reddit Data Bot
 redditbot = RedditBot()
 
-# Leave if you want to run it 24/7
-while True:
+secrets = email.getSecrets()
 
-    # Gets our new posts pass if image related subs. Default is memes
-    posts = redditbot.get_posts("memes")
+##########################################
+print("Set delay in seconds to start running:")
+strDelay = input("")
+if strDelay != None and strDelay != '':
+    intDelay = int(strDelay)
+else:
+    intDelay = 0
+print(f"Waiting for {intDelay/min} minutes")
+time.sleep(intDelay)
 
-    # Create folder if it doesn't exist
-    redditbot.create_data_folder()
+##########################################
+errCount=0
+test = False
+checkTime = True
+run = True
+start_time = time.time()
+print(f"Started posting at:{start_time}")
+while run:
+    
+    # get the current time in the PST timezone
+    current_time = datetime.now(timezone)
+    rand = random.randint(1,10*min)
+    timeToWait = hr - rand
+    minToWait = timeToWait/60
+    msg = f"Waiting for {minToWait} minutes to post next videos."
 
-    # Go through posts and find 5 that will work for us.
-    for post in posts:
-        redditbot.save_image(post)
+    # check if the current time is between 9am and 10pm PST
+    if (current_time.hour >= 9 and current_time.hour < 22) or checkTime == False:
+        post_data=getJsonFromFile('post_data.json')
+        for post in post_data:
+            
+            try:
+                print("Downloading reddit post")
+                reddit_post_data = redditbot.get_video(post['subreddit'])
 
-    # Wanted a date in my titles so added this helper
-    DAY = date.today().strftime("%d")
-    DAY = str(int(DAY)) + GetDaySuffix(int(DAY))
-    dt_string = date.today().strftime("%A %B") + f" {DAY}"
+                print("Creating video")
+                postVideo(post,reddit_post_data)
 
-    # Create the movie itself!
-    CreateMovie.CreateMP4(redditbot.post_data)
+                for p in reddit_post_data:
+                    redditbot.already_posted.append(p['id'])
 
-    # Video info for YouTube.
-    # This example uses the first post title.
-    video_data = {
-            "file": "video.mp4",
-            "title": f"{redditbot.post_data[0]['title']} - Dankest memes and comments {dt_string}!",
-            "description": "#shorts\nGiving you the hottest memes of the day with funny comments!",
-            "keywords":"meme,reddit,Dankestmemes",
-            "privacyStatus":"public"
-    }
+                print("Adding comment to last video")
+                
+                vidID = get_last_video_id(post['channel_id'])
+                
+                add_comment(post['channel_id'],post['comment'],vidID)
+                print(f"Elapsed Time since start: {time.time()-start_time}")
+            except Exception as ex:
+                errCount = errCount+1
+                msg = f"at {datetime.now} an error occurred trying to post {post}"
+                print(msg +"\n"+ str(ex))
+                
+                if test == False:
+                    sendEmail(secrets['email']['sender_email'],"Bot Error Occurred",msg + f"\n\n{str(ex)}")
 
-    print(video_data["title"])
-    print("Posting Video in 5 minutes...")
-    time.sleep(60 * 5)
-    upload_video(video_data)
-
-    # Sleep until ready to post another video!
-    time.sleep(60 * 60 * 24 - 1)
+                if errCount > 4:
+                    run = False
+                time.sleep(10)
+        if test == False:
+            sendEmail(secrets['email']['sender_email'],"Videos Posted",msg + "/n/n" + str(post_data))
+        
+    print(msg)
+    time.sleep(timeToWait)
