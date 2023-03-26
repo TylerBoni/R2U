@@ -38,7 +38,7 @@ class CreateMovie():
 
     @classmethod
     def CreateMP4(cls, post_data):
-
+        cleanup=[]
         clips = []
         for post in post_data:
             print(post['image_path'])
@@ -47,6 +47,7 @@ class CreateMovie():
               #  clips.append(clip)
             #else:
             clip = VideoFileClip(post['image_path'])
+            cleanup.append(post['image_path'])
             #clip_lengthener = [clip] * 60
             #clip = concatenate_videoclips(clip_lengthener)
             #clip = clip.subclip(0,12)
@@ -127,7 +128,7 @@ class CreateMovie():
         ratio = width/height
         if ratio > 1:
             print("Resizing video")
-            bg = moviepy.video.VideoClip.ImageClip("img\\black_bg_1080x1920.png")
+            bg = moviepy.video.VideoClip.ImageClip("img/black_bg_1080x1920.png")
             clip = CompositeVideoClip([bg,clip.set_duration(duration).set_position("center")])
         #clip = CompositeVideoClip([clip] + text_clips)
         clip = clip.set_duration(duration)
@@ -135,7 +136,9 @@ class CreateMovie():
         #clip.audio = new_audioclip
         clip.write_videofile("video.mp4", fps = 24,codec='libx264',threads=2,preset='ultrafast')
 
-        
+        for p in cleanup:
+            os.remove(p)
+            
         if os.path.exists(os.path.join(dir_path, "video_clips.mp4")):
             os.remove(os.path.join(dir_path, "video_clips.mp4"))
         else:

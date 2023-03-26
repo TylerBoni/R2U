@@ -83,8 +83,8 @@ def postVideo(post,reddit_post_data,test=False):
 
     if not test:
       print(video_data["title"])
-      print("video downloaded, posting in 1 minute")
-      time.sleep(60)
+      #print("video downloaded, posting in 1 minute")
+      #time.sleep(60)
 
       print("Posting Video...")
       upload_vid_chrome(video_data, channel_name)

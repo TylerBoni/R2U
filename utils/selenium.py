@@ -1,4 +1,5 @@
 import time
+from utils.helpers import getJsonFromFile
 from selenium.webdriver.remote.webelement import WebElement
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -8,13 +9,16 @@ from selenium.webdriver.support import expected_conditions as EC
 
 def startSelenium(url="https://google.com/", runHeadless=False):
 
+  stored_options = getJsonFromFile('utils/chrome_options.json')
+  os = 'ArchLinux'
+
   options = webdriver.ChromeOptions()
   # options.add_experimental_option('excludeSwitches', ['enable-logging'])
   options.add_argument("--log-level=3")
-  options.add_argument("user-data-dir=C:\\Users\\User\\AppData\\Local\Google\\Chrome\\User Data\\")
+  options.add_argument(f"user-data-dir={stored_options[os]['user-data-dir']}")
   if runHeadless:
     options.add_argument('--headless')
-  options.binary_location = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+  options.binary_location = stored_options[os]['binary-location']
 
   bot = webdriver.Chrome(executable_path="chromedriver.exe", chrome_options=options)
   
