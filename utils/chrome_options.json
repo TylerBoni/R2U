@@ -1,0 +1,12 @@
+{
+    "Windows":
+    {
+        "user-data-dir":"C:\\Users\\User\\AppData\\Local\\Google\\Chrome\\User Data\\",
+        "binary-location":"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+    },
+    "ArchLinux":
+    {
+        "user-data-dir":"/usr/local/chromium",
+        "binary-location":"/usr/bin/chromium"
+    }
+}
