@@ -1,5 +1,5 @@
 import time
-from utils.helpers import getJsonFromFile
+#from utils.helpers import getJsonFromFile
 from selenium.webdriver.remote.webelement import WebElement
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -7,7 +7,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-def startSelenium(url="https://google.com/", runHeadless=True):
+def startSelenium(url="https://google.com/", runHeadless=False):
 
   options = webdriver.ChromeOptions()
   # options.add_experimental_option('excludeSwitches', ['enable-logging'])
@@ -18,7 +18,7 @@ def startSelenium(url="https://google.com/", runHeadless=True):
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
 
-  #options.binary_location = stored_options[os]['binary-location']
+  #options.binary_location = '/usr/bin/chromedriver'
 
   bot = webdriver.Chrome(chrome_options=options)
   #bot = webdriver.Chrome(executable_path="chromedriver.exe", chrome_options=options)
