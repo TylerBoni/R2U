@@ -39,3 +39,4 @@ selenium==4.8.2
 selenium-chrome==0.0.29
 pyttsx3==2.90
 pytube==12.1.2
+pytz==2023.2

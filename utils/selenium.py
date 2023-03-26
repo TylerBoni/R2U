@@ -7,32 +7,34 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-def startSelenium(url="https://google.com/", runHeadless=False):
-
-  stored_options = getJsonFromFile('utils/chrome_options.json')
-  os = 'ArchLinux'
+def startSelenium(url="https://google.com/", runHeadless=True):
 
   options = webdriver.ChromeOptions()
   # options.add_experimental_option('excludeSwitches', ['enable-logging'])
   options.add_argument("--log-level=3")
-  options.add_argument(f"user-data-dir={stored_options[os]['user-data-dir']}")
+  options.add_argument(f"user-data-dir=data/chrome_data")
   if runHeadless:
     options.add_argument('--headless')
-  options.binary_location = stored_options[os]['binary-location']
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
 
-  bot = webdriver.Chrome(executable_path="chromedriver.exe", chrome_options=options)
+  #options.binary_location = stored_options[os]['binary-location']
+
+  bot = webdriver.Chrome(chrome_options=options)
+  #bot = webdriver.Chrome(executable_path="chromedriver.exe", chrome_options=options)
   
   if url != "":
     bot.get(url)
   return bot
 
 def xpathElement(bot,query,timeout=10):
-   return WebDriverWait(bot, timeout).until(EC.visibility_of_element_located((By.XPATH, query)))
+  element= WebDriverWait(bot, timeout).until(EC.presence_of_element_located((By.XPATH, query)))
+  return element
 
 def navigateToChannelSelect(bot=None):
   if bot==None:
     bot = startSelenium("https://studio.youtube.com/")
-
+  #input("Press enter to continue")
   acct_btn = xpathElement(bot,'//*[@id="account-button"]')
   acct_btn.click()
   time.sleep(3)

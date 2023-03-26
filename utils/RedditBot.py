@@ -96,7 +96,8 @@ class RedditBot():
                 f.write(response.content)
 
             # Use ffmpeg to combine the video and audio streams into a single file
-            with open('NUL', 'w') as devnull:
+
+            with open('/dev/null', 'w') as devnull:
                 return_code = subprocess.call(['ffmpeg','-y', '-i', video_file, '-i', audio_file, '-c:v', 'copy','-c:a', 'aac', '-b:a', '256k', out_file], stdout=devnull, stderr=devnull)
                 
             if return_code != 0:

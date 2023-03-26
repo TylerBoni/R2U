@@ -65,10 +65,10 @@ while run:
     rand = random.randint(1,10*min)
     timeToWait = hr - rand
     minToWait = timeToWait/60
-    msg = f"Waiting for {minToWait} minutes to post next videos."
 
     # check if the current time is between 9am and 10pm PST
     if (current_time.hour >= 9 and current_time.hour < 22) or checkTime == False:
+        msg = f"Waiting for {minToWait} minutes to post next videos."
         post_data=getJsonFromFile('post_data.json')
         for post in post_data:
             
