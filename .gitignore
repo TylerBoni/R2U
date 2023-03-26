@@ -1,5 +1,6 @@
 /env
 /data
+/utils/.env
 __pycache__
 main.py-oauth2.json
 client_secrets.json
