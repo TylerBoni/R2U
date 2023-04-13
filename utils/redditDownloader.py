@@ -34,12 +34,12 @@ class RedditBot:
             with open(self.posted_already_path, "r") as file:
                 self.already_posted = json.load(file)
 
-    def get_posts(self, sub="memes", type="all"):
+    def get_posts(self, sub="memes", type="all", limit=100):
         # Retrieve posts from the given subreddit
         self.post_data = []
         subreddit = self.reddit.subreddit(sub)
         posts = []
-        submissions = subreddit.top(time_filter="all", limit=300)
+        submissions = subreddit.top(time_filter="all", limit=limit)
         for submission in submissions:
             if submission.stickied:
                 print("Mod Post")
@@ -57,13 +57,33 @@ class RedditBot:
 
     def get_video(self, subreddit="memes", qty=1):
         # Get video data and save it
-        posts = self.get_posts(subreddit, "video")
+        postQueryLimit = 100
+        posts = self.get_posts(subreddit, "video", postQueryLimit)
+        posts = self.filterPosts(posts)
+        while (len(posts)<qty):
+            postQueryLimit = postQueryLimit + 100
+            if (postQueryLimit > 10000):
+                print("Post query limit reached in redditDownloader")
+                return
+            posts = self.get_posts(subreddit, "video", postQueryLimit)
+            posts = self.filterPosts(posts)
+
         data_list = []
         for post in posts:
             vid = self.save_content(post, qty)
             if vid is not None:
                 data_list.append(vid)
         return data_list
+    
+    def filterPosts(self,posts):
+        filteredPosts = []
+        for post in posts:
+            if post.media is not None:
+                if self.post_is_legal(post):
+                    filteredPosts.append(post)
+        return filteredPosts
+                    
+
 
     def create_data_folder(self, data_path):
         # Create a data folder for the current date if it doesn't exist
@@ -75,7 +95,7 @@ class RedditBot:
         return data_folder_path
 
     @staticmethod
-    def get_vid(fileName, video_url):
+    def download_vid(fileName, video_url):
         # Download video and audio streams and combine them into a single file
         video_file = fileName + "-video.mp4"
         audio_file = fileName + "-audio.mp4"
@@ -135,13 +155,12 @@ class RedditBot:
     def save_content(self, submission, scale=(720, 1280), qty=1):
         if submission.media is not None:
             video = submission.media['reddit_video']
-            dt_string = date.today().strftime("%m%d%Y")
             check_folder = os.path.isdir(self.data_folder_path)
 
             if check_folder and len(self.post_data) < qty and self.post_is_legal(submission):
                 file_name = f"{self.data_folder_path}Post-{submission.id}{submission.url.lower()[-4:]}"
                 video_url = video['fallback_url']
-                video_path = RedditBot.get_vid(file_name, video_url)
+                video_path = RedditBot.download_vid(file_name, video_url)
                 submission.comment_sort = 'best'
 
                 # Get the best comment and reply
