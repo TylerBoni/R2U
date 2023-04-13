@@ -3,9 +3,11 @@
 - pip install -r requirements.txt 
 - Install imageMagick
 - create a .env file with your reddit API details.
+    ````
     reddit_client_id=MYCLIENTID
     reddit_client_secret=MYSECRET
     reddit_user_agent=<MyAppName>
+    ````
 - create a client_secrets.json for your YouTube API details.
     ```json
     {
