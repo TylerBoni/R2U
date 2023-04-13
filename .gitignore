@@ -129,6 +129,7 @@ dmypy.json
 .pyre/
 
 #extra bs
+geckodriver.log
 /data
 /notes/*
 __pycache__
