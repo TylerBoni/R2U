@@ -20,12 +20,12 @@ import random
 import utils.emailClient as email
 from utils.emailClient import sendEmail
 from datetime import datetime
-from utils.CreateMovie import CreateMovie, GetDaySuffix
-from utils.RedditBot import RedditBot
-from utils.upload_video import postVideo
+from utils.createMovie import CreateMovie, GetDaySuffix
+from utils.redditDownloader import RedditBot
+from utils.uploadVideo import postVideo
 
 from utils.helpers import getJsonFromFile
-from utils.YT_api import get_last_video_id,add_comment
+from utils.youtubeHelpers import get_last_video_id,add_comment
 #from utils.selenium import addComment
 
 
@@ -68,6 +68,7 @@ while run:
 
     # check if the current time is between 9am and 10pm PST
     if (current_time.hour >= 9 and current_time.hour < 22) or checkTime == False:
+        
         msg = f"Waiting for {minToWait} minutes to post next videos."
         post_data=getJsonFromFile('post_data.json')
         for post in post_data:
@@ -96,7 +97,7 @@ while run:
                 if test == False:
                     sendEmail(secrets['email']['sender_email'],"Bot Error Occurred",msg + f"\n\n{str(ex)}")
 
-                if errCount > 4:
+                if errCount > 100:
                     run = False
                 time.sleep(10)
         if test == False:

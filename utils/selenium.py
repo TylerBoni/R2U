@@ -34,8 +34,9 @@ def xpathElement(bot,query,timeout=10):
 def navigateToChannelSelect(bot=None):
   if bot==None:
     bot = startSelenium("https://studio.youtube.com/")
-  #input("Press enter to continue")
-  acct_btn = xpathElement(bot,'//*[@id="account-button"]')
+  print("Pressing acct button")
+  time.sleep(3)
+  acct_btn = xpathElement(bot,'//*[@id="account-button"]',120)
   acct_btn.click()
   time.sleep(3)
 

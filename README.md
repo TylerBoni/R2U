@@ -1,17 +1,55 @@
-<a href="https://youtu.be/GS_0ZKzrvk0" target="_blank"><img src="https://i.imgur.com/xqj5z4b.png" title="Clarity Coders YouTube" /></a>
-# Fully Automated YouTube Shorts Channel
-> This code will show you how to setup and fully autmated YouTube Channel.
-> Content is gathered from Reddit using images both animated and still images will work.
-> Setup is in depth at times so check out the tutorial video if you need extra help.
-
 ## Setup
 - Clone Project
 - pip install -r requirements.txt 
-- This project uses MoviePy which uses <a href='https://www.imagemagick.org/script/index.php'>ImageMagick</a> to write text onto our movie. Follow the link to install. Not on windows you will need to update config defaults. 
+- Install imageMagick
 - create a .env file with your reddit API details.
-- create a client_secrets.json for your YouTube API details. 
-- Both are covered in the video if you need help!
+    reddit_client_id=MYCLIENTID
+    reddit_client_secret=MYSECRET
+    reddit_user_agent=<MyAppName>
+- create a client_secrets.json for your YouTube API details.
+    {
+        "web":{
+            "client_id":"",
+            "auth_uri":"",
+            "token_uri":"https://oauth2.googleapis.com/token",
+            "client_secret":"",
+            "redirect_uris":["http://localhost"]
+        }
+    }
+- create a email_secrets.json with your email details
+    {
+        "email": {
+            "sender_email": "R2UMedia@gmail.com",
+            "sender_pw": "tgfsdaliqzvsewkb"
+        }
+    }
+- create a post_data.json with the information to use for posting
+    [
+        {
+            "channel_name": "MyChannel",
+            "channel_id": "ChannelIDFoundInURL",
+            "subreddit": "Aww",
+            "hashtags": "#cutenessoverload #petscorner #animallovers #cutecats #cutepuppies",
+            "comment": "Be sure to like and subscribe for more Awwdorable clips! Have you spoiled your cat lately? Get them something overnight on sale at Amazon here! https://amzn.to/AFFILIATELINK"
+        }
+    ]
 
-## Contact!
-- YouTube <a href="https://www.youtube.com/claritycoders" target="_blank">Clarity Coders</a>
-- Chat with me! <a href="https://discord.gg/cAWW5qq" target="_blank">Discord</a>
+## Reddit setup
+- Have a reddit account and make an app to aquire access credentials, not much more to it
+
+## YT Setup
+- create youtube channel
+- Open settings and set the default to not be content for children
+
+## To Run
+
+----first run should be babysat, as this doesn't automatically log you in to youtube, and the first run requires oauth with the YT api
+
+- open terminal and cd to project
+- activate env with:
+    source env/bin/activate
+- run script with
+    python3.10 main.py
+    enter delay time in seconds and hit enter
+    profit
+

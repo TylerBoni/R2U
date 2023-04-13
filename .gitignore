@@ -1,11 +1,10 @@
 /env
 /data
 /utils/.env
+/notes/*
 __pycache__
 main.py-oauth2.json
 client_secrets.json
 email_secrets.json
-*.json
 *.mp4
-video.mp4
-video.json
+*.mp3
