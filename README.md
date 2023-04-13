@@ -7,6 +7,7 @@
     reddit_client_secret=MYSECRET
     reddit_user_agent=<MyAppName>
 - create a client_secrets.json for your YouTube API details.
+    ```json
     {
         "web":{
             "client_id":"",
@@ -16,14 +17,18 @@
             "redirect_uris":["http://localhost"]
         }
     }
+    ```
 - create a email_secrets.json with your email details
+    ```json
     {
         "email": {
             "sender_email": "R2UMedia@gmail.com",
             "sender_pw": "tgfsdaliqzvsewkb"
         }
     }
+    ```
 - create a post_data.json with the information to use for posting
+    ```json
     [
         {
             "channel_name": "MyChannel",
@@ -33,7 +38,7 @@
             "comment": "Be sure to like and subscribe for more Awwdorable clips! Have you spoiled your cat lately? Get them something overnight on sale at Amazon here! https://amzn.to/AFFILIATELINK"
         }
     ]
-
+    ```
 ## Reddit setup
 - Have a reddit account and make an app to aquire access credentials, not much more to it
 
