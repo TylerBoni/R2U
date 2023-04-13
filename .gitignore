@@ -6,5 +6,7 @@ __pycache__
 main.py-oauth2.json
 client_secrets.json
 email_secrets.json
+channel_data.json
+post_data.json
 *.mp4
 *.mp3
