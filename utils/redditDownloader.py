@@ -34,13 +34,15 @@ class RedditBot:
             with open(self.posted_already_path, "r") as file:
                 self.already_posted = json.load(file)
 
-    def get_posts(self, sub="memes", type="all", limit=100):
+    def get_posts(self, sub="memes", type="all", limit=100, after = ''):
         # Retrieve posts from the given subreddit
         self.post_data = []
         subreddit = self.reddit.subreddit(sub)
         posts = []
-        submissions = subreddit.top(time_filter="all", limit=limit)
+        submissions = subreddit.top(time_filter="all", limit=limit, params={'after': after})
+
         for submission in submissions:
+            # print(submission.id)
             if submission.stickied:
                 print("Mod Post")
             else:
@@ -53,19 +55,23 @@ class RedditBot:
                         posts.append(submission)
                 elif type == "all":
                     posts.append(submission)
-        return posts
+        after = submissions.params['after']
+        return posts, after
 
     def get_video(self, subreddit="memes", qty=1):
         # Get video data and save it
         postQueryLimit = 100
-        posts = self.get_posts(subreddit, "video", postQueryLimit)
+        posts, after = self.get_posts(subreddit, "video", postQueryLimit)
+        count = len(posts)
         posts = self.filterPosts(posts)
         while (len(posts)<qty):
+            print(count)
             postQueryLimit = postQueryLimit + 100
             if (postQueryLimit > 10000):
                 print("Post query limit reached in redditDownloader")
                 return
-            posts = self.get_posts(subreddit, "video", postQueryLimit)
+            posts, after = self.get_posts(subreddit, "video", postQueryLimit, after)
+            count = count + len(posts)
             posts = self.filterPosts(posts)
 
         data_list = []
