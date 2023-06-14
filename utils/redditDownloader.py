@@ -42,6 +42,7 @@ class RedditBot:
         submissions = subreddit.top(time_filter="all", limit=limit, params={'after': after})
 
         for submission in submissions:
+            # print(submission.fullname)
             # print(submission.id)
             if submission.stickied:
                 print("Mod Post")
@@ -62,15 +63,17 @@ class RedditBot:
         # Get video data and save it
         postQueryLimit = 100
         posts, after = self.get_posts(subreddit, "video", postQueryLimit)
+        fetchCount = postQueryLimit
         count = len(posts)
         posts = self.filterPosts(posts)
         while (len(posts)<qty):
             print(count)
-            postQueryLimit = postQueryLimit + 100
-            if (postQueryLimit > 10000):
+            # postQueryLimit = postQueryLimit + 1000
+            if (fetchCount > 10000):
                 print("Post query limit reached in redditDownloader")
                 return
             posts, after = self.get_posts(subreddit, "video", postQueryLimit, after)
+            fetchCount = fetchCount + postQueryLimit
             count = count + len(posts)
             posts = self.filterPosts(posts)
 
@@ -145,10 +148,15 @@ class RedditBot:
         # Check if the post meets the criteria
         video = submission.media['reddit_video']
         result = True
-        if video['height'] > 500 and not submission.over_18 and submission.id not in self.already_posted:
+
+        if submission.id in self.already_posted:
+            return False
+
+        if video['height'] >= 480 and not submission.over_18:
             result = True
         else:
             result = False
+            return result
 
         illegal_words = ["children", "kids", "kid", "child", "death", "dies", "killed", "kills"]
         for word in illegal_words:
