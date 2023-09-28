@@ -23,6 +23,7 @@ args = sys.argv
 
 min = 60
 hr = min*60
+hrQty = 2
 day = hr*24
 timezone = pytz.timezone("US/Pacific")
 
@@ -61,7 +62,7 @@ while run:
     # get the current time in the PST timezone
     current_time = datetime.now(timezone)
     rand = random.randint(1, 10*min)
-    timeToWait = hr - rand
+    timeToWait = hrQty * hr - rand
     minToWait = timeToWait/60
     msg = ""
     # check if the current time is between 9am and 10pm PST
@@ -80,27 +81,29 @@ while run:
                 for p in reddit_post_data:
                     redditbot.already_posted.append(p['id'])
 
-                print("Adding comment to last video")
+                if redditbot.already_posted:
+                    redditbot.save_posted_already()
 
-                vidID = get_last_video_id(post['channel_id'])
-
-                add_comment(post['channel_id'], post['comment'], vidID)
+                # print("Adding comment to last video")
+                # vidID = get_last_video_id(post['channel_id'])
+                # add_comment(post['channel_id'], post['comment'], vidID)
+                
                 print(f"Elapsed Time since start: {time.time()-start_time}")
             except Exception as ex:
                 errCount = errCount+1
                 msg = f"at {datetime.now} an error occurred trying to post {post}"
                 print(msg + "\n" + str(ex))
 
-                if test == False:
-                    sendEmail(secrets['email']['sender_email'],
-                              "Bot Error Occurred", msg + f"\n\n{str(ex)}")
+                # if test == False:
+                    # sendEmail(secrets['email']['sender_email'],
+                            #   "Bot Error Occurred", msg + f"\n\n{str(ex)}")
 
                 if errCount > 100:
                     run = False
                 time.sleep(10)
-        if test == False:
-            sendEmail(secrets['email']['sender_email'],
-                      "Videos Posted", msg + "/n/n" + str(post_data))
+        # if test == False:
+            # sendEmail(secrets['email']['sender_email'],
+                    #   "Videos Posted", msg + "/n/n" + str(post_data))
 
     print(msg)
     print(f"Waiting for {minToWait} minutes to post next videos.")

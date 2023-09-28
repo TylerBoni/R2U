@@ -1,4 +1,5 @@
 import os
+from time import sleep
 import requests
 import json
 import praw
@@ -34,13 +35,21 @@ class RedditBot:
             with open(self.posted_already_path, "r") as file:
                 self.already_posted = json.load(file)
 
+    def save_posted_already(self):
+        self.posted_already_path = os.path.join(self.data_path, "posted_already.json")
+        if os.path.isfile(self.posted_already_path):
+            print("Loading posted_already.json from data folder.")
+            with open(self.posted_already_path, "w") as file:
+                json.dump(self.already_posted,file)
+
     def get_posts(self, sub="memes", type="all", limit=100, after = ''):
         # Retrieve posts from the given subreddit
         self.post_data = []
         subreddit = self.reddit.subreddit(sub)
         posts = []
-        submissions = subreddit.top(time_filter="all", limit=limit, params={'after': after})
+        submissions = subreddit.top(time_filter="week", limit=limit, params={'after': after})
 
+        last_id = ""
         for submission in submissions:
             # print(submission.fullname)
             # print(submission.id)
@@ -56,7 +65,13 @@ class RedditBot:
                         posts.append(submission)
                 elif type == "all":
                     posts.append(submission)
+            # last_id = submission.id
+        # old_after = after
         after = submissions.params['after']
+
+        # if old_after == after:
+        #     after = f"t3_{last_id}"
+
         return posts, after
 
     def get_video(self, subreddit="memes", qty=1):
@@ -88,8 +103,12 @@ class RedditBot:
         filteredPosts = []
         for post in posts:
             if post.media is not None:
-                if self.post_is_legal(post):
+                result, reason = self.post_is_legal(post)
+                if result:
                     filteredPosts.append(post)
+                else:
+                    print(f"rejected post, {reason}: {post.url}")
+                    
         return filteredPosts
                     
 
@@ -148,23 +167,28 @@ class RedditBot:
         # Check if the post meets the criteria
         video = submission.media['reddit_video']
         result = True
+        reason = ""
 
         if submission.id in self.already_posted:
-            return False
-
-        if video['height'] >= 480 and not submission.over_18:
-            result = True
-        else:
+            reason = "already_posted"
             result = False
-            return result
 
-        illegal_words = ["children", "kids", "kid", "child", "death", "dies", "killed", "kills"]
-        for word in illegal_words:
-            if word in submission.title.lower():
-                result = False
-                break
+        if video['height'] < 480 and result:
+            reason = "Height below threshold"
+            result = False
+        if submission.over_18 and result:
+            reason = "NSFW Over 18"
+            result = False
 
-        return result
+        if result:
+            illegal_words = ["children", "kids", "kid", "child", "death", "dies", "killed", "kills"]
+            for word in illegal_words:
+                if word in submission.title.lower():
+                    reason = f"illegal word in title: {word}"
+                    result = False
+                    break
+
+        return result,reason
 
     def save_content(self, submission, scale=(720, 1280), qty=1):
         if submission.media is not None:

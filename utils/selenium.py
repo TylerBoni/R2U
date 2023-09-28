@@ -1,18 +1,23 @@
 import time
+import utils.emailClient
 #from utils.helpers import getJsonFromFile
 from selenium.webdriver.remote.webelement import WebElement
 from selenium import webdriver
+import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-def startSelenium(url="https://google.com/", runHeadless=False):
+from pathlib import Path
 
+def startSelenium(url="https://google.com/", runHeadless=False):
+  email_secrets = utils.emailClient.getSecrets()
   options = webdriver.ChromeOptions()
   # options.add_experimental_option('excludeSwitches', ['enable-logging'])
   options.add_argument("--log-level=3")
-  options.add_argument(f"user-data-dir=data/chrome_data")
+  user_data_dir = str(Path("../data/chrome_data").resolve())
+  options.add_argument(f"user-data-dir={user_data_dir}")
   if runHeadless:
     options.add_argument('--headless')
     options.add_argument("--disable-gpu")
@@ -20,9 +25,31 @@ def startSelenium(url="https://google.com/", runHeadless=False):
 
   #options.binary_location = '/usr/bin/chromedriver'
 
-  bot = webdriver.Chrome(chrome_options=options)
+  bot = uc.Chrome(options=options)
   #bot = webdriver.Chrome(executable_path="chromedriver.exe", chrome_options=options)
   
+  # print("Deleting cookies")
+  # bot.delete_all_cookies()
+  # bot.refresh()
+
+  print("opening login page")
+  bot.get('https://accounts.google.com/ServiceLogin')
+  time.sleep(2)
+
+  if "accounts.google.com" in bot.current_url:
+    username = email_secrets['email']['sender_email']
+    password = email_secrets['email']['sender_pw']
+
+    print("entering username")
+    bot.find_element("xpath", '//input[@type="email"]').send_keys(username)
+    bot.find_element("xpath", '//*[@id="identifierNext"]').click()
+    time.sleep(2)
+
+    print("entering pw")
+    bot.find_element("xpath", '//input[@type="password"]').send_keys(password)
+    bot.find_element("xpath", '//*[@id="passwordNext"]').click()
+    time.sleep(2)
+
   if url != "":
     bot.get(url)
   return bot
